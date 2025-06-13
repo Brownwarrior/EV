@@ -1,0 +1,2204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Betting Value Finder</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+        
+        .api-config {
+            background: #e8f4f8;
+            padding: 20px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .api-section {
+            margin-bottom: 15px;
+        }
+        
+        .api-section label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #2c3e50;
+        }
+        
+        .api-section input, .api-section select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .controls {
+            padding: 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .control-row {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .threshold-input {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .threshold-input label {
+            font-weight: bold;
+            color: #495057;
+        }
+        
+        .threshold-input input {
+            padding: 8px 12px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 16px;
+            width: 80px;
+        }
+        
+        .sport-filters {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .sport-filter {
+            padding: 8px 16px;
+            border: 2px solid #dee2e6;
+            border-radius: 20px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+        
+        .sport-filter.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        
+        .analyze-btn {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        
+        .analyze-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .analyze-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .status {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .status.loading {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .results {
+            padding: 30px;
+        }
+        
+        .results h2 {
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+        
+        .value-bet {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 15px 0;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .value-bet.high-value {
+            border-color: #28a745;
+            background: linear-gradient(135deg, #d4edda 0%, #f8fff8 100%);
+        }
+        
+        .value-bet.medium-value {
+            border-color: #ffc107;
+            background: linear-gradient(135deg, #fff3cd 0%, #fffbf0 100%);
+        }
+        
+        .value-bet.standalone {
+            border-color: #17a2b8;
+            background: linear-gradient(135deg, #d1ecf1 0%, #f0f9ff 100%);
+        }
+        
+        .value-badge {
+            position: absolute;
+            top: -10px;
+            right: 20px;
+            padding: 5px 15px;
+            border-radius: 15px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+        
+        .value-bet.high-value .value-badge {
+            background: #28a745;
+            color: white;
+        }
+        
+        .value-bet.medium-value .value-badge {
+            background: #ffc107;
+            color: #212529;
+        }
+        
+        .value-bet.standalone .value-badge {
+            background: #17a2b8;
+            color: white;
+        }
+        
+        .bet-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .player-name {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .sport-tag {
+            background: #6c757d;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            text-transform: uppercase;
+        }
+        
+        .bet-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .detail-item {
+            text-align: center;
+            padding: 10px;
+            background: rgba(255,255,255,0.7);
+            border-radius: 8px;
+        }
+        
+        .detail-label {
+            font-size: 0.9em;
+            color: #6c757d;
+            margin-bottom: 5px;
+        }
+        
+        .detail-value {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .recommendation {
+            background: #495057;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .no-results {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+        
+        .no-results h3 {
+            margin-bottom: 10px;
+        }
+        
+        .export-btn {
+            background: #17a2b8;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        
+        .api-status {
+            font-size: 12px;
+            margin-top: 5px;
+            padding: 5px 10px;
+            border-radius: 4px;
+        }
+        
+        .api-status.connected {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .api-status.disconnected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .api-status.warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .debug-section {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
+        .mode-toggle {
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        .mode-toggle label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-weight: bold;
+            color: #495057;
+        }
+
+        .mode-toggle input[type="checkbox"] {
+            width: auto;
+        }
+
+        .cors-notice {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+
+        .cors-notice h4 {
+            margin-bottom: 10px;
+            color: #1976d2;
+        }
+
+        .github-notice {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+
+        .github-notice h4 {
+            margin-bottom: 10px;
+            color: #495057;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 Enhanced Betting Value Finder</h1>
+            <p>Find profitable opportunities across DraftKings, FanDuel, and PrizePicks</p>
+        </div>
+        
+        <div class="api-config">
+            <h3 style="margin-bottom: 15px; color: #2c3e50;">🔌 API Configuration</h3>
+            
+            <div class="github-notice">
+                <h4>🚀 GitHub Pages Deployment Notes:</h4>
+                <p><strong>CORS Limitation:</strong> GitHub Pages uses HTTPS, which may block some API calls. For best results, clone this repository and run locally or use a server environment.</p>
+                <p><strong>API Keys:</strong> Never commit API keys to GitHub. Use environment variables or input them manually each session.</p>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px;">
+                <div class="api-section">
+                    <label for="odds-api-key">The Odds API Key:</label>
+                    <input type="password" id="odds-api-key" placeholder="Enter your API key">
+                    <div id="odds-api-status" class="api-status disconnected">Not Connected</div>
+                </div>
+                <div class="api-section">
+                    <label for="prizepicks-method">PrizePicks Data Method:</label>
+                    <select id="prizepicks-method" onchange="updatePrizePicksStatus()">
+                        <option value="mock">Mock Data (GitHub Pages Safe)</option>
+                        <option value="proxy">CORS Proxy + Direct API</option>
+                        <option value="direct">Direct API (Local Only)</option>
+                    </select>
+                    <div id="prizepicks-api-status" class="api-status warning">Mock Data Mode</div>
+                </div>
+            </div>
+            
+            <div class="cors-notice" id="cors-notice" style="display: none;">
+                <h4>🔧 CORS Setup Instructions:</h4>
+                <p><strong>Chrome/Edge:</strong> Install "CORS Unblock" extension or start with: <code>--disable-web-security --user-data-dir="C:/chrome-dev"</code></p>
+                <p><strong>Firefox:</strong> Install "CORS Everywhere" extension</p>
+                <p><strong>Alternative:</strong> Use the "CORS Proxy" option above (may be slower)</p>
+            </div>
+            
+            <div class="mode-toggle">
+                <label>
+                    <input type="checkbox" id="standalone-mode"> 
+                    Show Standalone Value Bets (DK/FD bets worth checking on PrizePicks manually)
+                </label>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <div class="control-row">
+                <div class="threshold-input">
+                    <label for="threshold">Breakeven Threshold:</label>
+                    <input type="number" id="threshold" value="54.3" step="0.1" min="50" max="70">
+                    <span>%</span>
+                </div>
+                
+                <div class="sport-filters">
+                    <div class="sport-filter active" data-sport="americanfootball_nfl">🏈 NFL</div>
+                    <div class="sport-filter active" data-sport="basketball_nba">🏀 NBA</div>
+                    <div class="sport-filter active" data-sport="baseball_mlb">⚾ MLB</div>
+                    <div class="sport-filter active" data-sport="icehockey_nhl">🏒 NHL</div>
+                </div>
+                
+                <button class="analyze-btn" onclick="runAnalysis()" id="analyze-button">🔍 Find Value Bets</button>
+            </div>
+            
+            <div id="status" class="status" style="display: none;"></div>
+        </div>
+        
+        <div class="results">
+            <div id="stats-container" style="display: none;">
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-number" id="total-props">0</div>
+                        <div class="stat-label">Total Props Scanned</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="matched-props">0</div>
+                        <div class="stat-label">Matched with PrizePicks</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="value-found">0</div>
+                        <div class="stat-label">Value Opportunities</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="standalone-found">0</div>
+                        <div class="stat-label">Standalone Bets</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="results-container">
+                <div class="no-results">
+                    <h3>Ready to find value bets!</h3>
+                    <p>Enter your Odds API key and click "Find Value Bets" to start the analysis</p>
+                </div>
+            </div>
+            
+            <button id="export-btn" class="export-btn" onclick="exportResults()" style="display: none;">📊 Export Results</button>
+            
+            <div id="debug-container" style="display: none;">
+                <h4>Debug Information:</h4>
+                <div id="debug-log" class="debug-section"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const CONFIG = {
+            oddsApiBaseUrl: 'https://api.the-odds-api.com/v4',
+            prizePicksDirectUrl: 'https://api.prizepicks.com/projections',
+            corsProxyUrl: 'https://api.allorigins.win/raw?url=',
+            rateLimit: 1000,
+            debug: true
+        };
+
+        // Sport mappings for PrizePicks
+        const SPORT_MAPPINGS = {
+            'americanfootball_nfl': 'NFL',
+            'basketball_nba': 'NBA', 
+            'baseball_mlb': 'MLB',
+            'icehockey_nhl': 'NHL'
+        };
+
+        // Market name normalization
+        const MARKET_MAPPINGS = {
+            // NFL
+            'passing_yards': 'Pass Yds',
+            'passing_touchdowns': 'Pass TDs',
+            'receiving_yards': 'Rec Yds',
+            'rushing_yards': 'Rush Yds',
+            'receptions': 'Receptions',
+            
+            // NBA
+            'points': 'Points',
+            'rebounds': 'Rebounds',
+            'assists': 'Assists',
+            'threes': '3-PT Made',
+            'pts_reb_ast': 'Pts+Rebs+Asts',
+            
+            // MLB
+            'hits': 'Hits',
+            'total_bases': 'Total Bases',
+            'strikeouts': 'Strikeouts',
+            'stolen_bases': 'Stolen Bases',
+            
+            // NHL
+            'points': 'Points',
+            'goals': 'Goals',
+            'assists': 'Assists'
+        };
+
+        // Global state
+        let isAnalyzing = false;
+        let debugLog = [];
+        let currentResults = [];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            setupEventListeners();
+            updatePrizePicksStatus();
+        });
+
+        function setupEventListeners() {
+            // Sport filter toggles
+            document.querySelectorAll('.sport-filter').forEach(filter => {
+                filter.addEventListener('click', function() {
+                    this.classList.toggle('active');
+                });
+            });
+
+            // API key validation
+            document.getElementById('odds-api-key').addEventListener('input', function() {
+                const apiKey = this.value.trim();
+                if (apiKey.length > 20) {
+                    testOddsApiConnection(apiKey);
+                } else {
+                    updateOddsApiStatus('disconnected', 'Not Connected');
+                }
+            });
+        }
+
+        function updatePrizePicksStatus() {
+            const method = document.getElementById('prizepicks-method').value;
+            const statusEl = document.getElementById('prizepicks-api-status');
+            const corsNotice = document.getElementById('cors-notice');
+
+            switch (method) {
+                case 'direct':
+                    statusEl.className = 'api-status warning';
+                    statusEl.textContent = 'Direct API - Local Only';
+                    corsNotice.style.display = 'block';
+                    break;
+                case 'proxy':
+                    statusEl.className = 'api-status warning';
+                    statusEl.textContent = 'Proxy Mode - May be slower';
+                    corsNotice.style.display = 'none';
+                    break;
+                case 'mock':
+                    statusEl.className = 'api-status connected';
+                    statusEl.textContent = 'Mock Data - GitHub Safe';
+                    corsNotice.style.display = 'none';
+                    break;
+            }
+        }
+
+        function updateOddsApiStatus(type, message) {
+            const statusEl = document.getElementById('odds-api-status');
+            statusEl.className = `api-status ${type}`;
+            statusEl.textContent = message;
+        }
+
+        // Utility functions
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${type.toUpperCase()}: ${message}`;
+            debugLog.push(logEntry);
+            
+            if (CONFIG.debug) {
+                console.log(logEntry);
+                updateDebugDisplay();
+            }
+        }
+
+        function updateDebugDisplay() {
+            const debugContainer = document.getElementById('debug-container');
+            const debugLogEl = document.getElementById('debug-log');
+            
+            if (CONFIG.debug && debugLog.length > 0) {
+                debugContainer.style.display = 'block';
+                debugLogEl.textContent = debugLog.slice(-20).join('\n');
+            }
+        }
+
+        function americanToImpliedProbability(odds) {
+            if (odds > 0) {
+                return 100 / (odds + 100);
+            } else {
+                return Math.abs(odds) / (Math.abs(odds) + 100);
+            }
+        }
+
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+            status.style.display = 'block';
+            log(message, type);
+        }
+
+        function updateStats(totalProps, matchedProps, valueFound, standaloneFound = 0) {
+            document.getElementById('total-props').textContent = totalProps;
+            document.getElementById('matched-props').textContent = matchedProps;
+            document.getElementById('value-found').textContent = valueFound;
+            document.getElementById('standalone-found').textContent = standaloneFound;
+            
+            document.getElementById('stats-container').style.display = 'block';
+        }
+
+        function levenshteinDistance(str1, str2) {
+            const matrix = [];
+            
+            for (let i = 0; i <= str2.length; i++) {
+                matrix[i] = [i];
+            }
+            
+            for (let j = 0; j <= str1.length; j++) {
+                matrix[0][j] = j;
+            }
+            
+            for (let i = 1; i <= str2.length; i++) {
+                for (let j = 1; j <= str1.length; j++) {
+                    if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
+                        matrix[i][j] = matrix[i - 1][j - 1];
+                    } else {
+                        matrix[i][j] = Math.min(
+                            matrix[i - 1][j - 1] + 1,
+                            matrix[i][j - 1] + 1,
+                            matrix[i - 1][j] + 1
+                        );
+                    }
+                }
+            }
+            
+            return matrix[str2.length][str1.length];
+        }
+
+        function normalizePlayerName(name) {
+            return name.toLowerCase()
+                      .replace(/[^\w\s]/g, '')
+                      .replace(/\s+/g, ' ')
+                      .trim();
+        }
+
+        function normalizeMarket(market) {
+            const normalized = market.toLowerCase()
+                                   .replace(/[^\w\s]/g, '')
+                                   .replace(/\s+/g, '_');
+            
+            return MARKET_MAPPINGS[normalized] || market;
+        }
+
+        // API Functions
+        async function testOddsApiConnection(apiKey) {
+            try {
+                showStatus('Testing Odds API connection...', 'loading');
+                
+                const response = await fetch(
+                    `${CONFIG.oddsApiBaseUrl}/sports?apiKey=${apiKey}`
+                );
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`Odds API connection successful. Found ${data.length} sports.`);
+                    updateOddsApiStatus('connected', 'Connected ✓');
+                    showStatus('Odds API connected successfully', 'success');
+                    return true;
+                } else {
+                    const errorText = await response.text();
+                    log(`Odds API connection failed: ${response.status} - ${errorText}`, 'error');
+                    updateOddsApiStatus('disconnected', 'Connection Failed');
+                    showStatus('Odds API connection failed', 'error');
+                    return false;
+                }
+            } catch (error) {
+                log(`Odds API connection error: ${error.message}`, 'error');
+                updateOddsApiStatus('disconnected', 'Connection Error');
+                showStatus('Odds API connection error', 'error');
+                return false;
+            }
+        }
+
+        async function fetchOddsData(sport, apiKey) {
+            try {
+                log(`Fetching odds data for ${sport}...`);
+                
+                const response = await fetch(
+                    `${CONFIG.oddsApiBaseUrl}/sports/${sport}/odds?` +
+                    `apiKey=${apiKey}&regions=us&markets=player_props&` +
+                    `bookmakers=draftkings,fanduel&oddsFormat=american`
+                );
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                log(`Received ${data.length} games from Odds API`);
+                
+                return data;
+                
+            } catch (error) {
+                log(`Error fetching odds data: ${error.message}`, 'error');
+                throw error;
+            }
+        }
+
+        async function fetchPrizePicksData(sport) {
+            const method = document.getElementById('prizepicks-method').value;
+            
+            try {
+                switch (method) {
+                    case 'direct':
+                        return await fetchPrizePicksDirect(sport);
+                    case 'proxy':
+                        return await fetchPrizePicksProxy(sport);
+                    case 'mock':
+                        return await fetchPrizePicksMock(sport);
+                    default:
+                        return await fetchPrizePicksMock(sport);
+                }
+            } catch (error) {
+                log(`PrizePicks fetch failed: ${error.message}`, 'error');
+                // Fallback to mock data on error
+                log('Falling back to mock data...', 'warning');
+                return await fetchPrizePicksMock(sport);
+            }
+        }
+
+        async function fetchPrizePicksDirect(sport) {
+            log(`Fetching PrizePicks data directly for ${sport}...`);
+            
+            try {
+                const response = await fetch(CONFIG.prizePicksDirectUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                log(`Direct API returned ${data.data?.length || 0} projections`);
+                
+                return processPrizePicksResponse(data, sport);
+                
+            } catch (error) {
+                log(`Direct API failed: ${error.message}`, 'error');
+                throw error;
+            }
+        }
+
+        async function fetchPrizePicksProxy(sport) {
+            log(`Fetching PrizePicks data via proxy for ${sport}...`);
+            
+            try {
+                const proxyUrl = `${CONFIG.corsProxyUrl}${encodeURIComponent(CONFIG.prizePicksDirectUrl)}`;
+                const response = await fetch(proxyUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Proxy failed: HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+                log(`Proxy API returned ${data.data?.length || 0} projections`);
+                
+                return processPrizePicksResponse(data, sport);
+                
+            } catch (error) {
+                log(`Proxy API failed: ${error.message}`, 'error');
+                throw error;
+            }
+        }
+
+        async function fetchPrizePicksMock(sport) {
+            log(`Using mock PrizePicks data for ${sport}...`);
+            
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            const mockData = {
+                americanfootball_nfl: [
+                    { player: 'Josh Allen', market: 'Pass Yds', line: 265.5, sport: 'NFL' },
+                    { player: 'Josh Allen', market: 'Pass TDs', line: 1.5, sport: 'NFL' },
+                    { player: 'Stefon Diggs', market: 'Rec Yds', line: 74.5, sport: 'NFL' },
+                    { player: 'Christian McCaffrey', market: 'Rush Yds', line: 87.5, sport: 'NFL' },
+                    { player: 'Travis Kelce', market: 'Rec Yds', line: 65.5, sport: 'NFL' },
+                    { player: 'Dak Prescott', market: 'Pass Yds', line: 285.5, sport: 'NFL' },
+                    { player: 'CeeDee Lamb', market: 'Rec Yds', line: 82.5, sport: 'NFL' },
+                    { player: 'Tyreek Hill', market: 'Rec Yds', line: 78.5, sport: 'NFL' },
+                    { player: 'Davante Adams', market: 'Receptions', line: 6.5, sport: 'NFL' },
+                    { player: <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Betting Value Finder</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+        
+        .api-config {
+            background: #e8f4f8;
+            padding: 20px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .api-section {
+            margin-bottom: 15px;
+        }
+        
+        .api-section label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #2c3e50;
+        }
+        
+        .api-section input, .api-section select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .controls {
+            padding: 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .control-row {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .threshold-input {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .threshold-input label {
+            font-weight: bold;
+            color: #495057;
+        }
+        
+        .threshold-input input {
+            padding: 8px 12px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 16px;
+            width: 80px;
+        }
+        
+        .sport-filters {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .sport-filter {
+            padding: 8px 16px;
+            border: 2px solid #dee2e6;
+            border-radius: 20px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+        
+        .sport-filter.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        
+        .analyze-btn {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        
+        .analyze-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .analyze-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .status {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .status.loading {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .results {
+            padding: 30px;
+        }
+        
+        .results h2 {
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+        
+        .value-bet {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 15px 0;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .value-bet.high-value {
+            border-color: #28a745;
+            background: linear-gradient(135deg, #d4edda 0%, #f8fff8 100%);
+        }
+        
+        .value-bet.medium-value {
+            border-color: #ffc107;
+            background: linear-gradient(135deg, #fff3cd 0%, #fffbf0 100%);
+        }
+        
+        .value-bet.standalone {
+            border-color: #17a2b8;
+            background: linear-gradient(135deg, #d1ecf1 0%, #f0f9ff 100%);
+        }
+        
+        .value-badge {
+            position: absolute;
+            top: -10px;
+            right: 20px;
+            padding: 5px 15px;
+            border-radius: 15px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+        
+        .value-bet.high-value .value-badge {
+            background: #28a745;
+            color: white;
+        }
+        
+        .value-bet.medium-value .value-badge {
+            background: #ffc107;
+            color: #212529;
+        }
+        
+        .value-bet.standalone .value-badge {
+            background: #17a2b8;
+            color: white;
+        }
+        
+        .bet-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .player-name {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .sport-tag {
+            background: #6c757d;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            text-transform: uppercase;
+        }
+        
+        .bet-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .detail-item {
+            text-align: center;
+            padding: 10px;
+            background: rgba(255,255,255,0.7);
+            border-radius: 8px;
+        }
+        
+        .detail-label {
+            font-size: 0.9em;
+            color: #6c757d;
+            margin-bottom: 5px;
+        }
+        
+        .detail-value {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .recommendation {
+            background: #495057;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .no-results {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+        
+        .no-results h3 {
+            margin-bottom: 10px;
+        }
+        
+        .export-btn {
+            background: #17a2b8;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        
+        .api-status {
+            font-size: 12px;
+            margin-top: 5px;
+            padding: 5px 10px;
+            border-radius: 4px;
+        }
+        
+        .api-status.connected {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .api-status.disconnected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .api-status.warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .debug-section {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
+        .mode-toggle {
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        .mode-toggle label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-weight: bold;
+            color: #495057;
+        }
+
+        .mode-toggle input[type="checkbox"] {
+            width: auto;
+        }
+
+        .cors-notice {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+
+        .cors-notice h4 {
+            margin-bottom: 10px;
+            color: #1976d2;
+        }
+
+        .github-notice {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+
+        .github-notice h4 {
+            margin-bottom: 10px;
+            color: #495057;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 Enhanced Betting Value Finder</h1>
+            <p>Find profitable opportunities across DraftKings, FanDuel, and PrizePicks</p>
+        </div>
+        
+        <div class="api-config">
+            <h3 style="margin-bottom: 15px; color: #2c3e50;">🔌 API Configuration</h3>
+            
+            <div class="github-notice">
+                <h4>🚀 GitHub Pages Deployment Notes:</h4>
+                <p><strong>CORS Limitation:</strong> GitHub Pages uses HTTPS, which may block some API calls. For best results, clone this repository and run locally or use a server environment.</p>
+                <p><strong>API Keys:</strong> Never commit API keys to GitHub. Use environment variables or input them manually each session.</p>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px;">
+                <div class="api-section">
+                    <label for="odds-api-key">The Odds API Key:</label>
+                    <input type="password" id="odds-api-key" placeholder="Enter your API key">
+                    <div id="odds-api-status" class="api-status disconnected">Not Connected</div>
+                </div>
+                <div class="api-section">
+                    <label for="prizepicks-method">PrizePicks Data Method:</label>
+                    <select id="prizepicks-method" onchange="updatePrizePicksStatus()">
+                        <option value="mock">Mock Data (GitHub Pages Safe)</option>
+                        <option value="proxy">CORS Proxy + Direct API</option>
+                        <option value="direct">Direct API (Local Only)</option>
+                    </select>
+                    <div id="prizepicks-api-status" class="api-status warning">Mock Data Mode</div>
+                </div>
+            </div>
+            
+            <div class="cors-notice" id="cors-notice" style="display: none;">
+                <h4>🔧 CORS Setup Instructions:</h4>
+                <p><strong>Chrome/Edge:</strong> Install "CORS Unblock" extension or start with: <code>--disable-web-security --user-data-dir="C:/chrome-dev"</code></p>
+                <p><strong>Firefox:</strong> Install "CORS Everywhere" extension</p>
+                <p><strong>Alternative:</strong> Use the "CORS Proxy" option above (may be slower)</p>
+            </div>
+            
+            <div class="mode-toggle">
+                <label>
+                    <input type="checkbox" id="standalone-mode"> 
+                    Show Standalone Value Bets (DK/FD bets worth checking on PrizePicks manually)
+                </label>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <div class="control-row">
+                <div class="threshold-input">
+                    <label for="threshold">Breakeven Threshold:</label>
+                    <input type="number" id="threshold" value="54.3" step="0.1" min="50" max="70">
+                    <span>%</span>
+                </div>
+                
+                <div class="sport-filters">
+                    <div class="sport-filter active" data-sport="americanfootball_nfl">🏈 NFL</div>
+                    <div class="sport-filter active" data-sport="basketball_nba">🏀 NBA</div>
+                    <div class="sport-filter active" data-sport="baseball_mlb">⚾ MLB</div>
+                    <div class="sport-filter active" data-sport="icehockey_nhl">🏒 NHL</div>
+                </div>
+                
+                <button class="analyze-btn" onclick="runAnalysis()" id="analyze-button">🔍 Find Value Bets</button>
+            </div>
+            
+            <div id="status" class="status" style="display: none;"></div>
+        </div>
+        
+        <div class="results">
+            <div id="stats-container" style="display: none;">
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-number" id="total-props">0</div>
+                        <div class="stat-label">Total Props Scanned</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="matched-props">0</div>
+                        <div class="stat-label">Matched with PrizePicks</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="value-found">0</div>
+                        <div class="stat-label">Value Opportunities</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="standalone-found">0</div>
+                        <div class="stat-label">Standalone Bets</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="results-container">
+                <div class="no-results">
+                    <h3>Ready to find value bets!</h3>
+                    <p>Enter your Odds API key and click "Find Value Bets" to start the analysis</p>
+                </div>
+            </div>
+            
+            <button id="export-btn" class="export-btn" onclick="exportResults()" style="display: none;">📊 Export Results</button>
+            
+            <div id="debug-container" style="display: none;">
+                <h4>Debug Information:</h4>
+                <div id="debug-log" class="debug-section"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const CONFIG = {
+            oddsApiBaseUrl: 'https://api.the-odds-api.com/v4',
+            prizePicksDirectUrl: 'https://api.prizepicks.com/projections',
+            corsProxyUrl: 'https://api.allorigins.win/raw?url=',
+            rateLimit: 1000,
+            debug: true
+        };
+
+        // Sport mappings for PrizePicks
+        const SPORT_MAPPINGS = {
+            'americanfootball_nfl': 'NFL',
+            'basketball_nba': 'NBA', 
+            'baseball_mlb': 'MLB',
+            'icehockey_nhl': 'NHL'
+        };
+
+        // Market name normalization
+        const MARKET_MAPPINGS = {
+            // NFL
+            'passing_yards': 'Pass Yds',
+            'passing_touchdowns': 'Pass TDs',
+            'receiving_yards': 'Rec Yds',
+            'rushing_yards': 'Rush Yds',
+            'receptions': 'Receptions',
+            
+            // NBA
+            'points': 'Points',
+            'rebounds': 'Rebounds',
+            'assists': 'Assists',
+            'threes': '3-PT Made',
+            'pts_reb_ast': 'Pts+Rebs+Asts',
+            
+            // MLB
+            'hits': 'Hits',
+            'total_bases': 'Total Bases',
+            'strikeouts': 'Strikeouts',
+            'stolen_bases': 'Stolen Bases',
+            
+            // NHL
+            'points': 'Points',
+            'goals': 'Goals',
+            'assists': 'Assists'
+        };
+
+        // Global state
+        let isAnalyzing = false;
+        let debugLog = [];
+        let currentResults = [];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            setupEventListeners();
+            updatePrizePicksStatus();
+        });
+
+        function setupEventListeners() {
+            // Sport filter toggles
+            document.querySelectorAll('.sport-filter').forEach(filter => {
+                filter.addEventListener('click', function() {
+                    this.classList.toggle('active');
+                });
+            });
+
+            // API key validation
+            document.getElementById('odds-api-key').addEventListener('input', function() {
+                const apiKey = this.value.trim();
+                if (apiKey.length > 20) {
+                    testOddsApiConnection(apiKey);
+                } else {
+                    updateOddsApiStatus('disconnected', 'Not Connected');
+                }
+            });
+        }
+
+        function updatePrizePicksStatus() {
+            const method = document.getElementById('prizepicks-method').value;
+            const statusEl = document.getElementById('prizepicks-api-status');
+            const corsNotice = document.getElementById('cors-notice');
+
+            switch (method) {
+                case 'direct':
+                    statusEl.className = 'api-status warning';
+                    statusEl.textContent = 'Direct API - Local Only';
+                    corsNotice.style.display = 'block';
+                    break;
+                case 'proxy':
+                    statusEl.className = 'api-status warning';
+                    statusEl.textContent = 'Proxy Mode - May be slower';
+                    corsNotice.style.display = 'none';
+                    break;
+                case 'mock':
+                    statusEl.className = 'api-status connected';
+                    statusEl.textContent = 'Mock Data - GitHub Safe';
+                    corsNotice.style.display = 'none';
+                    break;
+            }
+        }
+
+        function updateOddsApiStatus(type, message) {
+            const statusEl = document.getElementById('odds-api-status');
+            statusEl.className = `api-status ${type}`;
+            statusEl.textContent = message;
+        }
+
+        // Utility functions
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${type.toUpperCase()}: ${message}`;
+            debugLog.push(logEntry);
+            
+            if (CONFIG.debug) {
+                console.log(logEntry);
+                updateDebugDisplay();
+            }
+        }
+
+        function updateDebugDisplay() {
+            const debugContainer = document.getElementById('debug-container');
+            const debugLogEl = document.getElementById('debug-log');
+            
+            if (CONFIG.debug && debugLog.length > 0) {
+                debugContainer.style.display = 'block';
+                debugLogEl.textContent = debugLog.slice(-20).join('\n');
+            }
+        }
+
+        function americanToImpliedProbability(odds) {
+            if (odds > 0) {
+                return 100 / (odds + 100);
+            } else {
+                return Math.abs(odds) / (Math.abs(odds) + 100);
+            }
+        }
+
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+            status.style.display = 'block';
+            log(message, type);
+        }
+
+        function updateStats(totalProps, matchedProps, valueFound, standaloneFound = 0) {
+            document.getElementById('total-props').textContent = totalProps;
+            document.getElementById('matched-props').textContent = matchedProps;
+            document.getElementById('value-found').textContent = valueFound;
+            document.getElementById('standalone-found').textContent = standaloneFound;
+            
+            document.getElementById('stats-container').style.display = 'block';
+        }
+
+        function levenshteinDistance(str1, str2) {
+            const matrix = [];
+            
+            for (let i = 0; i <= str2.length; i++) {
+                matrix[i] = [i];
+            }
+            
+            for (let j = 0; j <= str1.length; j++) {
+                matrix[0][j] = j;
+            }
+            
+            for (let i = 1; i <= str2.length; i++) {
+                for (let j = 1; j <= str1.length; j++) {
+                    if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
+                        matrix[i][j] = matrix[i - 1][j - 1];
+                    } else {
+                        matrix[i][j] = Math.min(
+                            matrix[i - 1][j - 1] + 1,
+                            matrix[i][j - 1] + 1,
+                            matrix[i - 1][j] + 1
+                        );
+                    }
+                }
+            }
+            
+            return matrix[str2.length][str1.length];
+        }
+
+        function normalizePlayerName(name) {
+            return name.toLowerCase()
+                      .replace(/[^\w\s]/g, '')
+                      .replace(/\s+/g, ' ')
+                      .trim();
+        }
+
+        function normalizeMarket(market) {
+            const normalized = market.toLowerCase()
+                                   .replace(/[^\w\s]/g, '')
+                                   .replace(/\s+/g, '_');
+            
+            return MARKET_MAPPINGS[normalized] || market;
+        }
+
+        // API Functions
+        async function testOddsApiConnection(apiKey) {
+            try {
+                showStatus('Testing Odds API connection...', 'loading');
+                
+                const response = await fetch(
+                    `${CONFIG.oddsApiBaseUrl}/sports?apiKey=${apiKey}`
+                );
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`Odds API connection successful. Found ${data.length} sports.`);
+                    updateOddsApiStatus('connected', 'Connected ✓');
+                    showStatus('Odds API connected successfully', 'success');
+                    return true;
+                } else {
+                    const errorText = await response.text();
+                    log(`Odds API connection failed: ${response.status} - ${errorText}`, 'error');
+                    updateOddsApiStatus('disconnected', 'Connection Failed');
+                    showStatus('Odds API connection failed', 'error');
+                    return false;
+                }
+            } catch (error) {
+                log(`Odds API connection error: ${error.message}`, 'error');
+                updateOddsApiStatus('disconnected', 'Connection Error');
+                showStatus('Odds API connection error', 'error');
+                return false;
+            }
+        }
+
+        async function fetchOddsData(sport, apiKey) {
+            try {
+                log(`Fetching odds data for ${sport}...`);
+                
+                const response = await fetch(
+                    `${CONFIG.oddsApiBaseUrl}/sports/${sport}/odds?` +
+                    `apiKey=${apiKey}&regions=us&markets=player_props&` +
+                    `bookmakers=draftkings,fanduel&oddsFormat=american`
+                );
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                log(`Received ${data.length} games from Odds API`);
+                
+                return data;
+                
+            } catch (error) {
+                log(`Error fetching odds data: ${error.message}`, 'error');
+                throw error;
+            }
+        }
+
+        async function fetchPrizePicksData(sport) {
+            const method = document.getElementById('prizepicks-method').value;
+            
+            try {
+                switch (method) {
+                    case 'direct':
+                        return await fetchPrizePicksDirect(sport);
+                    case 'proxy':
+                        return await fetchPrizePicksProxy(sport);
+                    case 'mock':
+                        return await fetchPrizePicksMock(sport);
+                    default:
+                        return await fetchPrizePicksMock(sport);
+                }
+            } catch (error) {
+                log(`PrizePicks fetch failed: ${error.message}`, 'error');
+                // Fallback to mock data on error
+                log('Falling back to mock data...', 'warning');
+                return await fetchPrizePicksMock(sport);
+            }
+        }
+
+        async function fetchPrizePicksDirect(sport) {
+            log(`Fetching PrizePicks data directly for ${sport}...`);
+            
+            try {
+                const response = await fetch(CONFIG.prizePicksDirectUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                log(`Direct API returned ${data.data?.length || 0} projections`);
+                
+                return processPrizePicksResponse(data, sport);
+                
+            } catch (error) {
+                log(`Direct API failed: ${error.message}`, 'error');
+                throw error;
+            }
+        }
+
+        async function fetchPrizePicksProxy(sport) {
+            log(`Fetching PrizePicks data via proxy for ${sport}...`);
+            
+            try {
+                const proxyUrl = `${CONFIG.corsProxyUrl}${encodeURIComponent(CONFIG.prizePicksDirectUrl)}`;
+                const response = await fetch(proxyUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Proxy failed: HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+                log(`Proxy API returned ${data.data?.length || 0} projections`);
+                
+                return processPrizePicksResponse(data, sport);
+                
+            } catch (error) {
+                log(`Proxy API failed: ${error.message}`, 'error');
+                throw error;
+            }
+        }
+
+        async function fetchPrizePicksMock(sport) {
+            log(`Using mock PrizePicks data for ${sport}...`);
+            
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            const mockData = {
+                americanfootball_nfl: [
+                    { player: 'Josh Allen', market: 'Pass Yds', line: 265.5, sport: 'NFL' },
+                    { player: 'Josh Allen', market: 'Pass TDs', line: 1.5, sport: 'NFL' },
+                    { player: 'Stefon Diggs', market: 'Rec Yds', line: 74.5, sport: 'NFL' },
+                    { player: 'Christian McCaffrey', market: 'Rush Yds', line: 87.5, sport: 'NFL' },
+                    { player: 'Travis Kelce', market: 'Rec Yds', line: 65.5, sport: 'NFL' },
+                    { player: 'Dak Prescott', market: 'Pass Yds', line: 285.5, sport: 'NFL' },
+                    { player: 'CeeDee Lamb', market: 'Rec Yds', line: 82.5, sport: 'NFL' },
+                    { player: 'Tyreek Hill', market: 'Rec Yds', line: 78.5, sport: 'NFL' },
+                    { player: 'Davante Adams', market: 'Receptions', line: 6.5, sport: 'NFL' },
+                    { player: 'Derrick Henry', market: 'Rush Yds', line: 92.5, sport: 'NFL' }
+                ],
+                basketball_nba: [
+                    { player: 'LeBron James', market: 'Points', line: 26.5, sport: 'NBA' },
+                    { player: 'LeBron James', market: 'Rebounds', line: 7.5, sport: 'NBA' },
+                    { player: 'LeBron James', market: 'Assists', line: 6.5, sport: 'NBA' },
+                    { player: 'Stephen Curry', market: 'Points', line: 28.5, sport: 'NBA' },
+                    { player: 'Stephen Curry', market: '3-PT Made', line: 4.5, sport: 'NBA' },
+                    { player: 'Giannis Antetokounmpo', market: 'Points', line: 31.5, sport: 'NBA' },
+                    { player: 'Giannis Antetokounmpo', market: 'Rebounds', line: 11.5, sport: 'NBA' },
+                    { player: 'Luka Doncic', market: 'Points', line: 29.5, sport: 'NBA' },
+                    { player: 'Luka Doncic', market: 'Assists', line: 8.5, sport: 'NBA' },
+                    { player: 'Jayson Tatum', market: 'Points', line: 27.5, sport: 'NBA' },
+                    { player: 'Kevin Durant', market: 'Points', line: 26.5, sport: 'NBA' },
+                    { player: 'Nikola Jokic', market: 'Rebounds', line: 12.5, sport: 'NBA' },
+                    { player: 'Nikola Jokic', market: 'Assists', line: 9.5, sport: 'NBA' }
+                ],
+                baseball_mlb: [
+                    { player: 'Mookie Betts', market: 'Hits', line: 1.5, sport: 'MLB' },
+                    { player: 'Mookie Betts', market: 'Total Bases', line: 2.5, sport: 'MLB' },
+                    { player: 'Aaron Judge', market: 'Hits', line: 1.5, sport: 'MLB' },
+                    { player: 'Ronald Acuna Jr.', market: 'Hits', line: 1.5, sport: 'MLB' },
+                    { player: 'Vladimir Guerrero Jr.', market: 'Total Bases', line: 2.5, sport: 'MLB' },
+                    { player: 'Freddie Freeman', market: 'Hits', line: 1.5, sport: 'MLB' },
+                    { player: 'Jose Altuve', market: 'Hits', line: 1.5, sport: 'MLB' },
+                    { player: 'Gerrit Cole', market: 'Strikeouts', line: 7.5, sport: 'MLB' },
+                    { player: 'Shane Bieber', market: 'Strikeouts', line: 8.5, sport: 'MLB' }
+                ],
+                icehockey_nhl: [
+                    { player: 'Connor McDavid', market: 'Points', line: 1.5, sport: 'NHL' },
+                    { player: 'Leon Draisaitl', market: 'Points', line: 1.5, sport: 'NHL' },
+                    { player: 'Nathan MacKinnon', market: 'Points', line: 1.5, sport: 'NHL' },
+                    { player: 'David Pastrnak', market: 'Goals', line: 0.5, sport: 'NHL' },
+                    { player: 'Erik Karlsson', market: 'Assists', line: 0.5, sport: 'NHL' },
+                    { player: 'Auston Matthews', market: 'Goals', line: 0.5, sport: 'NHL' },
+                    { player: 'Mitch Marner', market: 'Assists', line: 0.5, sport: 'NHL' }
+                ]
+            };
+
+            const sportData = mockData[sport] || [];
+            log(`Mock data returned ${sportData.length} projections for ${sport}`);
+            
+            return sportData;
+        }
+
+        function processPrizePicksResponse(data, sport) {
+            if (!data || !data.data) {
+                log('No data found in PrizePicks response', 'warning');
+                return [];
+            }
+
+            const sportName = SPORT_MAPPINGS[sport];
+            const filtered = data.data.filter(projection => {
+                return projection.attributes &&
+                       projection.attributes.league === sportName &&
+                       projection.attributes.status === 'active';
+            });
+
+            const processed = filtered.map(projection => ({
+                player: projection.attributes.name,
+                market: projection.attributes.stat_type,
+                line: parseFloat(projection.attributes.line_score),
+                sport: sportName
+            }));
+
+            log(`Processed ${processed.length} active projections for ${sportName}`);
+            return processed;
+        }
+
+        // Analysis Functions
+        async function runAnalysis() {
+            if (isAnalyzing) return;
+            
+            const apiKey = document.getElementById('odds-api-key').value.trim();
+            if (!apiKey) {
+                showStatus('Please enter your Odds API key', 'error');
+                return;
+            }
+
+            const selectedSports = Array.from(document.querySelectorAll('.sport-filter.active'))
+                                       .map(el => el.dataset.sport);
+            
+            if (selectedSports.length === 0) {
+                showStatus('Please select at least one sport', 'error');
+                return;
+            }
+
+            const threshold = parseFloat(document.getElementById('threshold').value);
+            if (isNaN(threshold) || threshold < 50 || threshold > 70) {
+                showStatus('Please enter a valid threshold between 50-70%', 'error');
+                return;
+            }
+
+            isAnalyzing = true;
+            const analyzeBtn = document.getElementById('analyze-button');
+            analyzeBtn.disabled = true;
+            analyzeBtn.textContent = '🔄 Analyzing...';
+            
+            currentResults = [];
+            debugLog = [];
+            
+            try {
+                showStatus('Starting analysis...', 'loading');
+                
+                let totalProps = 0;
+                let matchedProps = 0;
+                let valueFound = 0;
+                let standaloneFound = 0;
+
+                for (const sport of selectedSports) {
+                    showStatus(`Analyzing ${SPORT_MAPPINGS[sport]}...`, 'loading');
+                    
+                    try {
+                        // Fetch odds and PrizePicks data concurrently
+                        const [oddsData, prizePicksData] = await Promise.all([
+                            fetchOddsData(sport, apiKey),
+                            fetchPrizePicksData(sport)
+                        ]);
+
+                        log(`${sport}: ${oddsData.length} games, ${prizePicksData.length} PrizePicks projections`);
+
+                        const sportResults = analyzeValueBets(
+                            oddsData, 
+                            prizePicksData, 
+                            threshold, 
+                            sport
+                        );
+
+                        // Update counters
+                        const sportProps = countPropsInOddsData(oddsData);
+                        totalProps += sportProps;
+                        matchedProps += sportResults.matched;
+                        valueFound += sportResults.valueBets.length;
+                        standaloneFound += sportResults.standaloneBets.length;
+
+                        // Add results
+                        currentResults.push(...sportResults.valueBets);
+                        currentResults.push(...sportResults.standaloneBets);
+
+                        log(`${sport} complete: ${sportResults.valueBets.length} value bets, ${sportResults.standaloneBets.length} standalone`);
+
+                        // Small delay to prevent rate limiting
+                        await new Promise(resolve => setTimeout(resolve, CONFIG.rateLimit));
+
+                    } catch (error) {
+                        log(`Error analyzing ${sport}: ${error.message}`, 'error');
+                        showStatus(`Error analyzing ${SPORT_MAPPINGS[sport]}: ${error.message}`, 'error');
+                    }
+                }
+
+                // Update final stats
+                updateStats(totalProps, matchedProps, valueFound, standaloneFound);
+
+                // Display results
+                displayResults(currentResults);
+
+                if (currentResults.length > 0) {
+                    showStatus(`Analysis complete! Found ${valueFound} value opportunities and ${standaloneFound} standalone bets`, 'success');
+                    document.getElementById('export-btn').style.display = 'block';
+                } else {
+                    showStatus('Analysis complete - No value bets found at current threshold', 'warning');
+                }
+
+            } catch (error) {
+                log(`Analysis failed: ${error.message}`, 'error');
+                showStatus(`Analysis failed: ${error.message}`, 'error');
+            } finally {
+                isAnalyzing = false;
+                analyzeBtn.disabled = false;
+                analyzeBtn.textContent = '🔍 Find Value Bets';
+            }
+        }
+
+        function countPropsInOddsData(oddsData) {
+            let count = 0;
+            oddsData.forEach(game => {
+                game.bookmakers?.forEach(bookmaker => {
+                    bookmaker.markets?.forEach(market => {
+                        if (market.key.includes('player_')) {
+                            count += market.outcomes?.length || 0;
+                        }
+                    });
+                });
+            });
+            return count;
+        }
+
+        function analyzeValueBets(oddsData, prizePicksData, threshold, sport) {
+            const valueBets = [];
+            const standaloneBets = [];
+            let matched = 0;
+
+            const showStandalone = document.getElementById('standalone-mode').checked;
+
+            oddsData.forEach(game => {
+                game.bookmakers?.forEach(bookmaker => {
+                    bookmaker.markets?.forEach(market => {
+                        if (!market.key.includes('player_')) return;
+
+                        market.outcomes?.forEach(outcome => {
+                            const playerName = normalizePlayerName(outcome.description || '');
+                            const marketName = normalizeMarket(market.key);
+                            const line = parseFloat(outcome.point) || 0;
+
+                            // Find matching PrizePicks projection
+                            const prizePicksMatch = findPrizePicksMatch(
+                                prizePicksData, 
+                                playerName, 
+                                marketName, 
+                                line
+                            );
+
+                            if (prizePicksMatch) {
+                                matched++;
+                                
+                                // Calculate implied probability
+                                const impliedProb = americanToImpliedProbability(outcome.price) * 100;
+                                
+                                // Determine bet direction based on line comparison
+                                const isOver = line <= prizePicksMatch.line;
+                                const requiredProb = isOver ? threshold : (100 - threshold);
+                                
+                                if (impliedProb < requiredProb) {
+                                    const valuePercent = requiredProb - impliedProb;
+                                    
+                                    valueBets.push({
+                                        type: 'value',
+                                        player: outcome.description,
+                                        sport: SPORT_MAPPINGS[sport],
+                                        market: market.key,
+                                        bookmaker: bookmaker.title,
+                                        line: line,
+                                        odds: outcome.price,
+                                        impliedProb: impliedProb,
+                                        prizePicksLine: prizePicksMatch.line,
+                                        direction: isOver ? 'Over' : 'Under',
+                                        valuePercent: valuePercent,
+                                        recommendation: generateRecommendation(valuePercent, isOver, prizePicksMatch.line)
+                                    });
+                                }
+                            } else if (showStandalone) {
+                                // Standalone bet (no PrizePicks match but potentially valuable)
+                                const impliedProb = americanToImpliedProbability(outcome.price) * 100;
+                                
+                                if (impliedProb < 45) { // Very favorable odds
+                                    standaloneBets.push({
+                                        type: 'standalone',
+                                        player: outcome.description,
+                                        sport: SPORT_MAPPINGS[sport],
+                                        market: market.key,
+                                        bookmaker: bookmaker.title,
+                                        line: line,
+                                        odds: outcome.price,
+                                        impliedProb: impliedProb,
+                                        recommendation: 'Consider checking this bet on PrizePicks manually'
+                                    });
+                                }
+                            }
+                        });
+                    });
+                });
+            });
+
+            return { valueBets, standaloneBets, matched };
+        }
+
+        function findPrizePicksMatch(prizePicksData, playerName, marketName, line) {
+            const matches = prizePicksData.filter(projection => {
+                const nameMatch = levenshteinDistance(
+                    normalizePlayerName(projection.player),
+                    playerName
+                ) <= 2;
+                
+                const marketMatch = normalizeMarket(projection.market) === marketName;
+                const lineDiff = Math.abs(projection.line - line);
+                const lineMatch = lineDiff <= 2; // Allow small line differences
+                
+                return nameMatch && marketMatch && lineMatch;
+            });
+
+            // Return the closest match
+            if (matches.length > 0) {
+                return matches.reduce((closest, current) => {
+                    const closestDiff = Math.abs(closest.line - line);
+                    const currentDiff = Math.abs(current.line - line);
+                    return currentDiff < closestDiff ? current : closest;
+                });
+            }
+
+            return null;
+        }
+
+        function generateRecommendation(valuePercent, isOver, prizePicksLine) {
+            const direction = isOver ? 'OVER' : 'UNDER';
+            const strength = valuePercent > 10 ? 'STRONG' : valuePercent > 5 ? 'MODERATE' : 'MILD';
+            
+            return `${strength} ${direction} - ${valuePercent.toFixed(1)}% edge vs PrizePicks line ${prizePicksLine}`;
+        }
+
+        // Display Functions
+        function displayResults(results) {
+            const container = document.getElementById('results-container');
+            
+            if (results.length === 0) {
+                container.innerHTML = `
+                    <div class="no-results">
+                        <h3>No value bets found</h3>
+                        <p>Try adjusting your threshold or checking different sports</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Sort by value percentage (highest first)
+            const sortedResults = results.sort((a, b) => {
+                const aValue = a.valuePercent || 0;
+                const bValue = b.valuePercent || 0;
+                return bValue - aValue;
+            });
+
+            let html = `<h2>🎯 Found ${results.length} Betting Opportunities</h2>`;
+            
+            sortedResults.forEach(bet => {
+                html += createBetCard(bet);
+            });
+
+            container.innerHTML = html;
+        }
+
+        function createBetCard(bet) {
+            const isStandalone = bet.type === 'standalone';
+            const valueClass = isStandalone ? 'standalone' : 
+                              bet.valuePercent > 10 ? 'high-value' : 'medium-value';
+            
+            const badge = isStandalone ? 'STANDALONE' : 
+                         bet.valuePercent > 10 ? 'HIGH VALUE' : 'GOOD VALUE';
+
+            return `
+                <div class="value-bet ${valueClass}">
+                    <div class="value-badge">${badge}</div>
+                    
+                    <div class="bet-header">
+                        <div class="player-name">${bet.player}</div>
+                        <div class="sport-tag">${bet.sport}</div>
+                    </div>
+                    
+                    <div class="bet-details">
+                        <div class="detail-item">
+                            <div class="detail-label">Market</div>
+                            <div class="detail-value">${formatMarketName(bet.market)}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Bookmaker</div>
+                            <div class="detail-value">${bet.bookmaker}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Line</div>
+                            <div class="detail-value">${bet.line}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Odds</div>
+                            <div class="detail-value">${formatOdds(bet.odds)}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Implied Prob</div>
+                            <div class="detail-value">${bet.impliedProb.toFixed(1)}%</div>
+                        </div>
+                        ${!isStandalone ? `
+                        <div class="detail-item">
+                            <div class="detail-label">PrizePicks Line</div>
+                            <div class="detail-value">${bet.prizePicksLine}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Direction</div>
+                            <div class="detail-value">${bet.direction}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Edge</div>
+                            <div class="detail-value">${bet.valuePercent.toFixed(1)}%</div>
+                        </div>
+                        ` : ''}
+                    </div>
+                    
+                    <div class="recommendation">
+                        ${bet.recommendation}
+                    </div>
+                </div>
+            `;
+        }
+
+        function formatMarketName(market) {
+            return market.replace(/_/g, ' ')
+                        .replace(/\b\w/g, l => l.toUpperCase());
+        }
+
+        function formatOdds(odds) {
+            return odds > 0 ? `+${odds}` : `${odds}`;
+        }
+
+        // Export Functions
+        function exportResults() {
+            if (currentResults.length === 0) {
+                showStatus('No results to export', 'warning');
+                return;
+            }
+
+            const csvContent = generateCSV(currentResults);
+            downloadCSV(csvContent, `value-bets-${new Date().toISOString().split('T')[0]}.csv`);
+        }
+
+        function generateCSV(results) {
+            const headers = [
+                'Player', 'Sport', 'Market', 'Bookmaker', 'Line', 'Odds', 
+                'Implied Prob (%)', 'PrizePicks Line', 'Direction', 'Edge (%)', 
+                'Type', 'Recommendation'
+            ];
+
+            const rows = results.map(bet => [
+                bet.player,
+                bet.sport,
+                formatMarketName(bet.market),
+                bet.bookmaker,
+                bet.line,
+                formatOdds(bet.odds),
+                bet.impliedProb.toFixed(1),
+                bet.prizePicksLine || 'N/A',
+                bet.direction || 'N/A',
+                bet.valuePercent ? bet.valuePercent.toFixed(1) : 'N/A',
+                bet.type,
+                bet.recommendation
+            ]);
+
+            return [headers, ...rows]
+                .map(row => row.map(cell => `"${cell}"`).join(','))
+                .join('\n');
+        }
+
+        function downloadCSV(content, filename) {
+            const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            
+            if (link.download !== undefined) {
+                const url = URL.createObjectURL(blob);
+                link.setAttribute('href', url);
+                link.setAttribute('download', filename);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        }
+
+        // Initialize debug mode toggle
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.shiftKey && e.key === 'D') {
+                CONFIG.debug = !CONFIG.debug;
+                const debugContainer = document.getElementById('debug-container');
+                debugContainer.style.display = CONFIG.debug ? 'block' : 'none';
+                showStatus(`Debug mode ${CONFIG.debug ? 'enabled' : 'disabled'}`, 'success');
+            }
+        });
+    </script>
+</body>
+</html>
